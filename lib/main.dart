@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:scheduler_app/horizontal_timeline/test_data.dart';
 import 'package:scheduler_app/horizontal_timeline/timeline_viewer.dart';
 
 void main() {
@@ -38,7 +39,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         body: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          child: TimelineViewer(),
+          child: TimelineViewer(hourSize: 60, movedFromLeft: 60,),
         ));
   }
 }

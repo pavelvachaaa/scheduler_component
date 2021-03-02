@@ -2,22 +2,45 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:scheduler_app/horizontal_timeline/Event.dart';
+import 'package:scheduler_app/horizontal_timeline/models/Event.dart';
+import 'package:scheduler_app/horizontal_timeline/test_data.dart';
+
+import 'Event.dart';
 
 class TimelineViewer extends StatefulWidget {
+  // Velikost jedné hodiny
+  double hourSize = 60;
+
+  /// Odsazení od levého sloupce
+  double movedFromLeft = 60;
+
+  /// Scale factor - při gestu zvětšení či zmenšení se mění
+  double scaleFactor = 1;
+
+  /// Barvičky gridu
+  Color evenDividerColor = Colors.grey[300];
+  Color dividerColor = Colors.grey[400];
+
+  /// Data, co příjdou ze streamu, jedná se už o jednotlivé bloky
+  List<EventData> eventData = [];
+
+  TimelineViewer(
+      {this.hourSize = 60,
+      this.eventData,
+      this.movedFromLeft,
+      this.scaleFactor,
+      this.dividerColor,
+      this.evenDividerColor});
   @override
   _TimelineViewerState createState() => _TimelineViewerState();
 }
 
 class _TimelineViewerState extends State<TimelineViewer> {
-  /// Vertikální šířka mezi jednou hodinou
-  double margin_size = 60;
-
-  /// Posunutí oproti labelům
-  double moved_from_left = 60;
-
   /// Jednotliv dny
   double horizontalMargin = 60;
-  /** TOHLE BY PAK MĚLO DĚLAT  KOLIZE CHECKING
+
+  /* 
+   * TOHLE BY PAK MĚLO DĚLAT  KOLIZE CHECKING
    * 
    * final startTime = DateTime(2018, 6, 23, 10, 30);
 final endTime = DateTime(2018, 6, 23, 13, 00);
@@ -34,13 +57,13 @@ if(currentTime.isAfter(startTime) && currentTime.isBefore(endTime)) {
         return Container(
           color: Colors.grey[300],
           width: .5,
-          margin: EdgeInsets.only(right: margin_size - .5),
+          margin: EdgeInsets.only(right: this.widget.hourSize - .5),
         );
       } else {
         return Container(
           color: Colors.grey[400],
           width: .5,
-          margin: EdgeInsets.only(right: margin_size - .5),
+          margin: EdgeInsets.only(right: this.widget.hourSize - .5),
         );
       }
     }).toList();
@@ -60,10 +83,11 @@ if(currentTime.isAfter(startTime) && currentTime.isBefore(endTime)) {
 
   /// start hours
   double _calculateLeftMargin(hour, minute, {scaleFactor = 1}) {
-    print("$hour:$minute");
-    return (((minute * (margin_size / 60) + (hour * margin_size)) *
+    print("$hour:$minute ${this.widget.hourSize} ${this.widget.movedFromLeft}");
+    return (((minute * (this.widget.hourSize / 60) +
+                    (hour * this.widget.hourSize)) *
                 scaleFactor) +
-            moved_from_left)
+            this.widget.movedFromLeft)
         .toDouble()
         .abs();
   }
@@ -72,11 +96,34 @@ if(currentTime.isAfter(startTime) && currentTime.isBefore(endTime)) {
   double _calculateRightMargin(hour, minute, {scaleFactor = 1}) {
     print("$hour:$minute");
 
-    return (24 * margin_size -
-            (((hour * margin_size) + minute * (margin_size / 60)) *
+    return (24 * this.widget.hourSize -
+            (((hour * this.widget.hourSize) +
+                    minute * (this.widget.hourSize / 60)) *
                 scaleFactor))
         .toDouble()
         .abs();
+  }
+
+  /// Zařazení do správného řádku
+  double _caculateTopMargin(rowNumber, {scaleFactor = 1}) {
+    return (8.0 * horizontalMargin) + 1 + .5 * rowNumber * scaleFactor;
+  }
+
+  List<Event> events = [];
+  @override
+  void initState() {
+    jsonData.forEach((json) {
+      EventData event = EventData.fromMap(json);
+      print(event.toString());
+      return events.add(Event(
+          tag: event.id,
+          top: _caculateTopMargin(event.rowNumber),
+          left: _calculateLeftMargin(event.start.hour, event.start.minute),
+          color: Colors.red,
+          right: _calculateRightMargin(event.end.hour, event.end.minute),
+          eventData: event));
+    });
+    super.initState();
   }
 
   @override
@@ -91,7 +138,7 @@ if(currentTime.isAfter(startTime) && currentTime.isBefore(endTime)) {
                 border: Border(
                     bottom: BorderSide(width: 1, color: Colors.grey[400]))),
             child: Container(
-              margin: EdgeInsets.only(left: moved_from_left),
+              margin: EdgeInsets.only(left: this.widget.movedFromLeft),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,7 +146,7 @@ if(currentTime.isAfter(startTime) && currentTime.isBefore(endTime)) {
                 children: List.generate(
                     24,
                     (index) => Container(
-                        width: margin_size,
+                        width: this.widget.hourSize,
                         child: Text(
                           "$index",
                           style: TextStyle(color: Colors.grey[300]),
@@ -144,7 +191,7 @@ if(currentTime.isAfter(startTime) && currentTime.isBefore(endTime)) {
                               ))),
                     ),
                     Container(
-                      margin: EdgeInsets.only(left: moved_from_left),
+                      margin: EdgeInsets.only(left: this.widget.movedFromLeft),
                       child: Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,62 +201,9 @@ if(currentTime.isAfter(startTime) && currentTime.isBefore(endTime)) {
                     Container(
                         width: 1500,
                         child: Column(children: createHorizontalDividers(24))),
-                    Event(
-                      left: _calculateLeftMargin(2, 0),
-                      right: _calculateRightMargin(3, 30),
-                      top: 1,
-                      height: 28,
-                      tag: "event1",
-                      color: Colors
-                          .primaries[Random().nextInt(Colors.primaries.length)],
-                    ),
-                    Event(
-                      left: _calculateLeftMargin(2, 0),
-                      right: _calculateRightMargin(3, 30),
-                      top: 1,
-                      tag: "event2",
-                      height: 28,
-                      color: Colors
-                          .primaries[Random().nextInt(Colors.primaries.length)],
-                    ),
-                    Event(
-                      left: _calculateLeftMargin(2, 30),
-                      right: _calculateRightMargin(4, 45),
-                      top: (8.0 * horizontalMargin) +
-                          1 +
-                          .5 * 8.0, //.5*8,0 = jednotlivé linky mají šířku .5
-                      tag: "event3",
-                      height: 30,
-                      color: Colors
-                          .primaries[Random().nextInt(Colors.primaries.length)],
-                    ),
-                    Event(
-                      left: _calculateLeftMargin(5, 0),
-                      right: _calculateRightMargin(8, 0),
-                      top: 61,
-                      tag: "event4",
-                      height: 58,
-                      color: Colors
-                          .primaries[Random().nextInt(Colors.primaries.length)],
-                    ),
-                    Event(
-                      left: _calculateLeftMargin(2, 0),
-                      right: _calculateRightMargin(8, 0),
-                      top: 120,
-                      tag: "event5",
-                      color: Colors
-                          .primaries[Random().nextInt(Colors.primaries.length)],
-                      height: 28,
-                    ),
-                    Event(
-                      left: _calculateLeftMargin(0, 30),
-                      right: _calculateRightMargin(3, 0),
-                      top: 150,
-                      tag: "event6",
-                      height: 28,
-                      color: Colors
-                          .primaries[Random().nextInt(Colors.primaries.length)],
-                    ),
+
+                        Column(children: events,)
+
                   ],
                 ),
               ),

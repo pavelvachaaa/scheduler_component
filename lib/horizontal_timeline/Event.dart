@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
 
 import 'package:scheduler_app/detail_view.dart';
+import 'package:scheduler_app/horizontal_timeline/models/Event.dart';
 
 class Event extends StatelessWidget {
   final double left;
   final double right;
   final double top;
   final double height;
+  final EventData eventData;
   final String tag;
   final Color color;
 
-  Event({this.left, this.right, this.top, this.height, this.tag, this.color});
+  Event({this.left, this.right, this.top, this.height, this.tag, this.color, this.eventData});
   @override
   Widget build(BuildContext context) {
     return Positioned(
@@ -66,5 +67,4 @@ class Event extends StatelessWidget {
         ));
   }
 
-  widget({Container child}) {}
 }
